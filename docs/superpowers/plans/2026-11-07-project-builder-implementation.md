@@ -244,7 +244,7 @@ Commit: git commit -m "feat: define strict project contracts and command entry p
 - Produces: begin_operation(operation_id: str, fingerprint: str) -> OperationReceipt; complete_operation(operation_id: str, outcome: dict) -> OperationReceipt; read_operation(operation_id: str) -> OperationReceipt | None
 - Produces: RunSnapshot(identity, status, revision, contract_digest, pending_changes, evidence_ids); OperationReceipt(id, fingerprint, status, outcome)
 
-- [ ] **Step 1: เขียน failing tests ใน tests/state/test_store.py** — ประกาศ fixtures ของ task ใน test/conftest เดียวกัน พร้อม assertions ต่อไปนี้และกรณีเพิ่มเติมที่ระบุ
+- [x] **Step 1: เขียน failing tests ใน tests/state/test_store.py** — ประกาศ fixtures ของ task ใน test/conftest เดียวกัน พร้อม assertions ต่อไปนี้และกรณีเพิ่มเติมที่ระบุ
 
 ~~~python
 def test_stale_writer_cannot_overwrite_new_revision(store, ready_run):
@@ -257,24 +257,24 @@ def test_replayed_operation_returns_same_receipt(store):
         store.begin_operation("op-1", "different")
 ~~~
 
-- [ ] **Step 2: รัน RED**
+- [x] **Step 2: รัน RED**
 
 Run: uv run --frozen --python 3.14.4 pytest tests/state/test_store.py -q  
 Expected: FAIL เพราะ interface/behavior ที่ task นี้รับผิดชอบยังไม่มี; ไม่ถือ import/dependency failure ที่ไม่เกี่ยวข้องเป็นหลักฐาน RED
 
-- [ ] **Step 3: Implement interfaces ในไฟล์เจ้าของ task**
+- [x] **Step 3: Implement interfaces ในไฟล์เจ้าของ task**
 
 ใช้ sqlite3 transaction/WAL และ versioned schema; commit operation intent ก่อน side effect, outcome หลังตรวจผล; crash ระหว่าง intent/outcome ให้ UNKNOWN ไม่เดาว่าสำเร็จ; serialize mutation ต่อ run
 
 - เพิ่ม process-level test เปิดสอง connections และ kill writer ก่อน commit: connection ใหม่ต้องอ่าน revision เก่าหรือใหม่ที่สมบูรณ์ ไม่เห็นครึ่ง transaction
 - ใช้ user-local runtime storage ตาม PlatformPaths; export artifacts ที่แชร์ได้เป็น JSON/Markdown แทน commit database
 
-- [ ] **Step 4: รัน GREEN และตรวจผลส่งมอบ**
+- [x] **Step 4: รัน GREEN และตรวจผลส่งมอบ**
 
 Run: uv run --frozen --python 3.14.4 pytest tests/state/test_store.py -q  
 Expected: PASS ทุก test ที่เลือกบน environment ที่ระบุ พร้อมตรวจ receipts/artifacts ตาม task; native/human checks ที่ยังไม่ทำต้องแสดง WAITING/UNVERIFIED ห้ามแทนด้วย unit-test PASS
 
-- [ ] **Step 5: Commit บน feature branch ของ task เท่านั้น**
+- [x] **Step 5: Commit บน feature branch ของ task เท่านั้น**
 
 ตรวจ diff เฉพาะไฟล์ task และ evidence ที่แชร์ได้ แล้วใช้ git add กับรายการไฟล์ที่ระบุชัด (ไม่ git add . ที่อาจเก็บข้อมูลผู้ทดลอง/secrets)  
 Commit: git commit -m "feat: persist run state and idempotent operation receipts"  
