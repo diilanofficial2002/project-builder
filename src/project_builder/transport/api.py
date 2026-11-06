@@ -7,11 +7,19 @@ from project_builder.application.git_service import LocalGit
 from project_builder.application.rules import DISCOVERY, discovery_questions
 from project_builder.application.execution import cleanup_project, pending_resources
 
-READS={"status","help","doctor","guide","backlog","discovery","artifacts","review-packet","operations"}
+READS={"status","help","doctor","guide","backlog","discovery","artifacts","review-packet","operations","native-plan"}
 FIELDS={"init":{"kind"},"start":{"description"},"continue":set(),"pause":set(),"cancel":set(),
         "change":{"text","urgent"},"submit":{"kind","data"},"feedback":{"data"},"cleanup":set(),
         "qa-review":{"subject","digest","notes"},"review-packet":{"subject"},
-        "git":{"operation","name","stage","source","target"},"execute":{"recipe_id"}}
+        "git":{"operation","name","stage","source","target"},"execute":{"recipe_id"},
+        "native-plan":{"capabilities"}}
+
+
+def _cleanup(workspace,project_id):
+    result=cleanup_project(project_id)
+    native=workspace.native_resources()
+    if native["status"]!="PASS": result["status"]="CLEANUP_PENDING"
+    return result|{"native_resources":native}
 
 def invoke(root,intent,payload=None,*,request_id=None,expected_revision=None,run_id=None):
     payload={} if payload is None else payload
@@ -21,7 +29,7 @@ def invoke(root,intent,payload=None,*,request_id=None,expected_revision=None,run
     if len(json.dumps(payload,allow_nan=False).encode("utf-8"))>2**20: raise ValueError("payload exceeds 1MiB")
     if intent=="change" and "urgent" in payload and type(payload["urgent"]) is not bool: raise ValueError("urgent must be boolean")
     workspace=Workspace(Path(root))
-    if intent=="status": return workspace.status()
+    if intent=="status": return workspace.status()|{"native_resources":workspace.native_resources()}
     if intent=="help": return {"status":"READY","commands":sorted(READS|FIELDS.keys()),"next_action":"Start with init, start, discovery; review kickoff before scoped work."}
     if intent=="doctor": return environment_plan(root)
     if intent=="guide":
@@ -35,6 +43,13 @@ def invoke(root,intent,payload=None,*,request_id=None,expected_revision=None,run
         return {"status":"READY","questions":discovery_questions((doc or {}).get("brief",{}).get("answers",{}) if (doc or {}).get("brief") else {}),"fields":list(DISCOVERY)}
     if intent=="review-packet": return workspace.review_packet(payload["subject"])|{"status":"REVIEW_PACKET"}
     if intent=="operations": return {"status":"READY","operations":(workspace._read() or {}).get("actions",{})}
+    if intent=="native-plan":
+        from project_builder.application.native_host import execution_route
+        doc=workspace._read() or {};run=doc.get("run") or {}
+        if run_id is not None and run_id!=run.get("id"): raise ValueError("stale run ID")
+        authorized=bool(run.get("contract_digest") and run.get("status") not in {"PAUSED","CANCELLED","COMPLETED"}
+                        and "native_tools" in (doc.get("brief") or {}).get("permissions",[]))
+        return execution_route(payload.get("capabilities"),authorized=authorized)|{"run_id":run.get("id"),"revision":doc.get("revision")}
     if intent=="init":
         result=workspace.init(payload.get("kind","new"))
         try: result["git"]=LocalGit(root).bootstrap()
@@ -49,7 +64,7 @@ def invoke(root,intent,payload=None,*,request_id=None,expected_revision=None,run
     if intent in {"git","execute","qa-review","cleanup"}:
         if current.get("revision")!=expected_revision: raise ValueError("stale workspace revision")
         if intent=="qa-review": return workspace.record_agent_review(payload["subject"],payload["digest"],payload["notes"])
-        if intent=="cleanup": return cleanup_project(current["project_id"])
+        if intent=="cleanup": return _cleanup(workspace,current["project_id"])
         doc=workspace._read()
         permission="local_git" if intent=="git" else "execute_recipes"
         if not current.get("contract_digest") or current["status"] in {"PAUSED","CANCELLED","COMPLETED"} or permission not in doc["brief"].get("permissions",[]):
@@ -71,5 +86,5 @@ def invoke(root,intent,payload=None,*,request_id=None,expected_revision=None,run
     if intent=="feedback": payload={"kind":"feedback","data":payload["data"]}; intent="submit"
     if intent in {"pause","cancel"}:
         result=workspace.command(intent,payload,request_id=request_id,expected_revision=expected_revision)
-        return result|{"cleanup":cleanup_project(current["project_id"])}
+        return result|{"cleanup":_cleanup(workspace,current["project_id"])}
     return workspace.command(intent,payload,request_id=request_id,expected_revision=expected_revision)

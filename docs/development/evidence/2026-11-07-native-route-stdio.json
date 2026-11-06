@@ -1,0 +1,1 @@
+{"status":"PASS","transport":"stdio","tools":["project_builder"],"observed_state":"DISCOVERY","model_approval":"REJECTED","public_execution":"ISOLATION_REQUIRED","native_route_without_kickoff":"NOT_AUTHORIZED"}

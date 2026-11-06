@@ -98,6 +98,14 @@ class Workspace:
         doc=self._read()
         return copy.deepcopy(doc["artifacts"]) if doc else {}
 
+    def native_resources(self,doc=None):
+        from .native_host import native_jobs_gate
+        doc=self._read() if doc is None else doc
+        work=(doc or {}).get("artifacts",{}).get("work",{})
+        if "native_tools" not in ((doc or {}).get("brief") or {}).get("permissions",[]) and "native_jobs" not in work:
+            return {"status":"PASS","reason":"No native execution permission or job declaration."}
+        return native_jobs_gate(work,((doc or {}).get("run") or {}).get("id"))
+
     def _packet(self,doc,subject):
         run=doc.get("run")
         if not run:
@@ -139,6 +147,9 @@ class Workspace:
                 return {"ready":False,"subject":subject,"reason":"Guide needs setup/run/stop/cleanup verification"}
         elif subject=="handoff":
             from .execution import pending_resources
+            native=self.native_resources(doc)
+            if native["status"]!="PASS":
+                return {"ready":False,"subject":subject,"reason":"Reconcile host-native workloads and cleanup evidence first","native_resources":native}
             if pending_resources(doc["project_id"]) or any(a["status"]=="UNKNOWN" for a in doc.get("actions",{}).values()):
                 return {"ready":False,"subject":subject,"reason":"Clean owned workloads/reconcile unknown actions first"}
             if not all(self._reviewed(doc,s) for s in ("quality","guide","feedback")):
@@ -201,6 +212,9 @@ class Workspace:
             if run and run["status"] not in TERMINAL:
                 return self._view(doc)
             if run:
+                from .execution import pending_resources
+                if self.native_resources(doc)["status"]!="PASS" or pending_resources(doc["project_id"]):
+                    raise ValueError("Reconcile previous owned workloads before starting a new run")
                 doc.setdefault("archive",[]).append({"run":copy.deepcopy(run),"brief":copy.deepcopy(doc.get("brief")),
                     "artifacts":copy.deepcopy(doc["artifacts"]),"reviews":copy.deepcopy(doc["reviews"])})
                 doc["brief"]=None  # Reassess the next scope; never mechanically repeat a Stage ladder.
@@ -234,7 +248,7 @@ class Workspace:
                 requirements=data.get("requirements",[])
                 if not isinstance(requirements,list) or not requirements or any(not isinstance(r,dict) or not isinstance(r.get("id"),str) or not r.get("acceptance") or not r.get("summary") for r in requirements) or len({r["id"] for r in requirements})!=len(requirements):
                     raise ValueError("unique requirements with acceptance examples are required")
-                if not set(data.get("permissions",[])) <= {"local_git","execute_recipes"}:
+                if not set(data.get("permissions",[])) <= {"local_git","native_tools","execute_recipes"}:
                     raise ValueError("unsupported authority; immutable ceiling cannot be raised")
                 if run["contract_digest"] is not None and run["status"] not in TERMINAL:
                     return self._dispatch(doc,"change",{"text":"Proposed requirement revision: "+json.dumps(data,ensure_ascii=False)})
@@ -243,7 +257,10 @@ class Workspace:
             else:
                 if (kind=="defects" and type(data) is not list) or (kind!="defects" and type(data) is not dict):
                     raise ValueError("invalid artifact document type")
-                if run["status"] in TERMINAL:
+                if kind=="work":
+                    from .native_host import validate_work_update
+                    validate_work_update(doc["artifacts"].get("work",{}),data,run["id"],cleanup_only=run["status"]=="CANCELLED")
+                if run["status"] in TERMINAL and not (kind=="work" and run["status"]=="CANCELLED"):
                     raise ValueError("completed evidence is immutable; start a new run")
                 if kind=="matrix" and run["status"] in TERMINAL:
                     raise ValueError("completed Stage evidence is immutable; start a new run")

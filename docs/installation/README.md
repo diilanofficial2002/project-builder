@@ -66,6 +66,8 @@ QA ใช้ `qa-review matrix|quality|guide --digest DIGEST --notes 'ผู้�
 
 ## ขอบเขตสิทธิ์และการหยุด
 
+งานเขียนโค้ด build/test และ local Playwright ใช้เครื่องมือ native ของ host หลัง kickoff ที่มี native_tools permission ตรวจ timeout กับการหยุดเฉพาะงานที่เป็นเจ้าของ และบันทึกงาน/cleanup ใน work artifact ไม่ต้องมี runner เพิ่ม ตัวช่วย standalone execute ที่ปิดไว้ไม่เป็นเงื่อนไขของเส้นทางนี้
+
 runtime รองรับ local Git ตามเส้นทาง feature → Stage → develop และปฏิเสธการ merge/push เข้า protected branch ที่มีอยู่ ปัจจุบัน remote writes ทั้งหมดปิดไว้ เมื่อผู้ให้บริการ/credential containment ยังพิสูจน์ไม่ได้ ทีมทำ PR draft ให้เจ้าของเผยแพร่เอง เพดานที่ออกแบบไว้สูงสุดคือเปิด PR เข้า staging และไม่เปิดทาง merge staging/PR เข้า main/deploy prod
 
 ปลั๊กอินไม่ใช่ OS sandbox สำหรับเครื่องมืออื่นที่ host มีสิทธิ์อยู่แล้ว อย่าอ้างว่าสามารถห้ามคำสั่งที่รันนอก runtime ได้ทั้งหมด และห้ามให้ coordinator ใช้ shell/connector/agent อื่นเลี่ยงข้อจำกัด

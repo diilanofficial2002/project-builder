@@ -11,7 +11,8 @@ def create(directory):
             "target":"final","stage_options":{},"domains":["cli"],"complexity":"mini","risks":[],"permissions":[],"recipes":[]},
         "matrix":{"revision":1,"requirements":["R1"],"families":{name:{"applicable":False,"reason":"TODO assess applicability"} for name in TEST_FAMILIES},"cases":[]},
         "guide":{"build_sha":"TODO current build","setup_steps":[],"run_steps":[],"stop_steps":[],"cleanup_steps":[]},
-        "feedback":{"build_sha":"TODO current build","participants":[],"observations":[]}}
+        "feedback":{"build_sha":"TODO current build","participants":[],"observations":[]},
+        "work":{"native_jobs":[],"no_native_jobs_reason":""}}
     for name,document in documents.items(): (directory/(name+".json")).write_text(json.dumps(document,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     return directory
 

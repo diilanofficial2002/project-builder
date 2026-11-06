@@ -1,0 +1,6 @@
+Command: .venv/Scripts/python -m pytest -q -W error
+Platform: Windows 11 x64; Python 3.14.4
+Temporary root: project-owned ignored scratch
+Observed result: 289 passed, 2 skipped in 51.94s
+Skipped: unavailable Windows symlink privilege; native macOS-only probe
+These are construction tests, not installed-host certification or managed-project human sessions.

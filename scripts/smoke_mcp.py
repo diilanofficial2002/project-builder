@@ -27,7 +27,9 @@ async def smoke(executable,project):
             assert denied["status"]=="REJECTED"
             refused=await call("execute",{"recipe_id":"unisolated"},state["revision"])
             assert refused["status"]=="ISOLATION_REQUIRED"
-            print(json.dumps({"status":"PASS","transport":"stdio","tools":[t.name for t in tools.tools],"observed_state":state["status"],"model_approval":"REJECTED","public_execution":"ISOLATION_REQUIRED"}))
+            native=await call("native-plan",{"capabilities":{}},state["revision"])
+            assert native["status"]=="NOT_AUTHORIZED"  # No manufactured human kickoff in a release smoke.
+            print(json.dumps({"status":"PASS","transport":"stdio","tools":[t.name for t in tools.tools],"observed_state":state["status"],"model_approval":"REJECTED","public_execution":"ISOLATION_REQUIRED","native_route_without_kickoff":"NOT_AUTHORIZED"}))
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser();parser.add_argument("executable",type=Path);args=parser.parse_args()

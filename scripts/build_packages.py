@@ -64,7 +64,7 @@ def package(root,runtime,output,*,platform_name):
         shutil.copytree(root/"plugin"/"references",directory/"references")
         shutil.copytree(runtime,directory/"runtime",symlinks=False)
         if (root/"docs"/"installation").exists(): shutil.copytree(root/"docs"/"installation",directory/"docs")
-        (directory/"README.md").write_text("# Project Builder\n\nAI team workflow for projects managed by Codex, Claude Code or Devin CLI/Desktop.\n\n- [Install and use](docs/README.md)\n- [Artifacts and API](docs/artifacts-and-api.md)\n- [Verification and limitations](docs/verification.md)\n- [Coordinator contract](references/workflow.md)\n\nEditable unapproved input documents are in templates/. A marketplace example is in examples/.\nPublic recipe execution is disabled until an isolated driver can enforce the authority ceiling.\n",encoding="utf-8")
+        (directory/"README.md").write_text("# Project Builder\n\nAI team workflow for projects managed by Codex, Claude Code or Devin CLI/Desktop.\n\n- [Install and use](docs/README.md)\n- [Artifacts and API](docs/artifacts-and-api.md)\n- [Verification and limitations](docs/verification.md)\n- [Coordinator contract](references/workflow.md)\n\nEditable unapproved input documents are in templates/. A marketplace example is in examples/.\nDevelopment and tests use the host's scoped native tools; no custom runner is required. The optional standalone recipe executor is disabled.\n",encoding="utf-8")
         import importlib.util
         spec=importlib.util.spec_from_file_location("project_builder_templates",root/"scripts"/"create_example.py")
         templates=importlib.util.module_from_spec(spec);spec.loader.exec_module(templates)

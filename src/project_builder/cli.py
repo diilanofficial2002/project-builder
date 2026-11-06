@@ -35,7 +35,7 @@ def _parser() -> argparse.ArgumentParser:
             command.add_argument("--urgency", choices=("normal", "urgent"), default="normal")
         elif intent == "feedback":
             command.add_argument("--feedback-path", type=Path)
-    for intent in ("submit","review-packet","review","qa-review","git","execute","discovery","artifacts","operations"):
+    for intent in ("submit","review-packet","review","qa-review","git","execute","discovery","artifacts","operations","native-plan"):
         command=subparsers.add_parser(intent,parents=[common])
         command.add_argument("--request-id")
         command.add_argument("--expected-revision",type=int)
@@ -51,6 +51,7 @@ def _parser() -> argparse.ArgumentParser:
             command.add_argument("operation",choices=("bootstrap","stage","feature","integrate","delete-feature"))
             for key in ("name","stage","source","target"): command.add_argument("--"+key)
         elif intent=="execute": command.add_argument("recipe_id")
+        elif intent=="native-plan": command.add_argument("capabilities_file",type=Path)
     subparsers.add_parser("mcp",help="run the local stdio MCP server")
     return parser
 
@@ -105,6 +106,9 @@ def main(argv: list[str] | None = None) -> int:
         elif intent=="git":
             payload={k:getattr(args,k) for k in ("operation","name","stage","source","target") if getattr(args,k) is not None}
         elif intent=="execute": payload={"recipe_id":args.recipe_id}
+        elif intent=="native-plan":
+            if args.capabilities_file.stat().st_size>2**20: raise ValueError("capabilities exceed 1MiB")
+            payload={"capabilities":json.loads(args.capabilities_file.read_text(encoding="utf-8-sig"))}
         if intent=="review":
             if not sys.stdin.isatty() or not sys.stdout.isatty():
                 raise ValueError("human review requires a separate interactive terminal; redirected/model-supplied approval is refused")

@@ -1,7 +1,7 @@
 # project-builder — แผนสร้างตัวปลั๊กอิน
 
 วันที่: 7 พฤศจิกายน 2026 (Asia/Bangkok)
-สถานะ: สร้าง local release 0.1.0 แล้ว มีข้อจำกัดที่บันทึกไว้ด้านล่าง; ยังไม่รับรอง full autonomous execution หรือ native ทุก host/OS
+สถานะ: สร้าง release 0.1.0 ด้วย shared core + native host adapters; ผลทดสอบและเป้าหมายที่ยังไม่ได้รันระบุใน verification.md
 Product requirements: [Product Spec](../product/project-builder-product-spec.md)
 
 ## 1. เป้าหมายและวิธีทำ
@@ -53,9 +53,9 @@ Product requirements: [Product Spec](../product/project-builder-product-spec.md)
 
 ## 5. Git และสถานะงานที่ทำไปแล้ว
 
-ใช้ development branch/workspace ตามปกติเพื่อรักษางานเดิม ไม่ยก branch policy ของ managed projects มาบังคับ repo นี้
+ใช้ development branch/workspace ตามปกติเพื่อรักษางานเดิม ไม่ยก branch policy หรือเพดาน PR เข้า staging ของ managed projects มาบังคับ repo นี้ เจ้าของอนุญาตให้ push งานสร้างปลั๊กอินเมื่อเสร็จและตรวจผ่านแล้ว
 
-โค้ดที่ทำไปแล้วถูกเก็บไว้ ยังไม่ลบ ไม่ reset ไม่ rewrite history และไม่มี remote push/PR จากงานนี้:
+สถานะ ณ ตอนแก้แผนครั้งแรก (ประวัติ ไม่ใช่งานค้างปัจจุบัน):
 - contracts/CLI, SQLite state และ policy/inspector มี commits กับผลทดสอบ/รีวิว
 - resource supervision เป็นงานค้างที่ยังไม่ commit/รีวิวครบ ไม่ถือว่าเสร็จ
 - branch/worktree ที่มีคำว่า poc เป็นร่องรอยของแผนที่ตีความผิด ไม่ใช่ข้อบังคับของแผนแก้
@@ -77,6 +77,8 @@ Interfaces ที่ใช้ร่วม: Workspace.status/init/start/submit/co
 
 ## Local release และงานที่ยังไม่รับรอง
 
-Windows host ZIP ทั้งสามพร้อม runtime สร้างและตรวจ schema/checksum แล้ว; ชุดทดสอบ 272 ผ่าน 2 ข้าม และ executable เชื่อมต่อ MCP จริงผ่าน ดู docs/installation/verification.md และ docs/development/review-and-decisions.md
+Windows host ZIP ทั้งสามพร้อม runtime สร้างและตรวจ schema/checksum; ชุดทดสอบล่าสุด 289 ผ่าน 2 ข้าม และตรวจ executable เชื่อมต่อ MCP จริง ดู docs/installation/verification.md และ docs/development/review-and-decisions.md
 
-Public arbitrary-process execution ยังปิดแบบ ISOLATION_REQUIRED จนกว่าจะมี driver ที่แยก Git/credential/filesystem/network ได้จริง ตัว Supervisor ที่ทดสอบเป็น library จัดการ lifetime ไม่ใช่ sandbox Remote writes ยัง LOCAL_ONLY และ native macOS/host activation ยัง NOT_RUN ไม่ประกาศว่าข้อกำหนดทั้งหมดผ่านแล้ว การทดสอบบนแพลตฟอร์มเหล่านั้นไม่ใช่ Stage หรือการหาผู้ทดลองสำหรับการสร้างปลั๊กอิน
+งานพัฒนาและทดสอบของ managed project ใช้เครื่องมือ native ของ host ตาม kickoff, resource budget และหลักฐาน lifecycle ไม่ต้องสร้าง runner/sandbox ของปลั๊กอินเองเป็นเงื่อนไขเพิ่ม การอ้างว่าต้องมี standalone driver ก่อนรัน test ใด ๆ เป็นการเพิ่ม scope ของผู้สร้างและถูกแก้แล้ว
+
+ตัวช่วย standalone execute ยัง ISOLATION_REQUIRED และ remote writes ใน runtime ยัง LOCAL_ONLY ส่วน supervisor เป็น lifecycle library ไม่ใช่ sandbox Native macOS/host activation ยัง NOT_RUN ไม่อ้างผลที่ยังไม่ได้ตรวจ การตรวจแพลตฟอร์มเหล่านั้นไม่ใช่ Stage หรือการหาผู้ทดลองสำหรับการสร้างปลั๊กอิน และข้อจำกัด remote ของ managed workflow ไม่ได้ห้าม push development branch ของปลั๊กอินนี้ตามคำสั่งเจ้าของ

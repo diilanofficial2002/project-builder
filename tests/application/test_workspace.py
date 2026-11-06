@@ -71,9 +71,10 @@ def test_stale_worker_and_duplicate_request_cannot_mutate_again(workspace):
     with pytest.raises(ValueError):
         workspace.command("pause",{},request_id="request2",expected_revision=old)
 
-def test_stage_completion_needs_current_quality_guide_and_real_feedback(workspace):
+@pytest.mark.parametrize("native",[False,True])
+def test_stage_completion_needs_current_quality_guide_and_real_feedback(workspace,native):
     from project_builder.application.rules import digest, TEST_FAMILIES
-    workspace.init("new"); workspace.start("Build"); workspace.submit("brief",brief())
+    workspace.init("new"); workspace.start("Build"); workspace.submit("brief",brief()|{"permissions":["native_tools"] if native else []})
     p=workspace.review_packet("kickoff"); workspace.record_review("kickoff",p["digest"])
     workspace.continue_run()
     build=workspace.build_id()
@@ -96,6 +97,11 @@ def test_stage_completion_needs_current_quality_guide_and_real_feedback(workspac
     assert workspace.continue_run()["status"] == "WAITING_FOR_HUMAN"
     p=workspace.review_packet("feedback"); workspace.record_review("feedback",p["digest"])
     assert workspace.continue_run()["status"] == "HANDOFF"
+    if native:
+        job={"id":"native-test-session","host":"codex","run_id":workspace.status()["run_id"],"status":"ACTIVE"}
+        workspace.submit("work",{"native_jobs":[job]})
+        assert not workspace.review_packet("handoff")["ready"]
+        workspace.submit("work",{"native_jobs":[job|{"status":"CLEANED","cleanup_evidence":"Native tool session exited; owned children and scratch absent"}]})
     p=workspace.review_packet("handoff"); workspace.record_review("handoff",p["digest"])
     assert workspace.continue_run()["status"] == "COMPLETED"
     assert workspace.backlog()["review_ready"]
