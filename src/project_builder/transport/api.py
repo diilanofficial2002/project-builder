@@ -5,7 +5,7 @@ from project_builder.application.workspace import Workspace
 from project_builder.application.environment import environment_plan
 from project_builder.application.git_service import LocalGit
 from project_builder.application.rules import DISCOVERY, discovery_questions
-from project_builder.application.execution import cleanup_project, execute_recipe, pending_resources
+from project_builder.application.execution import cleanup_project, pending_resources
 
 READS={"status","help","doctor","guide","backlog","discovery","artifacts","review-packet","operations"}
 FIELDS={"init":{"kind"},"start":{"description"},"continue":set(),"pause":set(),"cancel":set(),
@@ -24,7 +24,10 @@ def invoke(root,intent,payload=None,*,request_id=None,expected_revision=None,run
     if intent=="status": return workspace.status()
     if intent=="help": return {"status":"READY","commands":sorted(READS|FIELDS.keys()),"next_action":"Start with init, start, discovery; review kickoff before scoped work."}
     if intent=="doctor": return environment_plan(root)
-    if intent=="guide": return {"status":"READY","guide":workspace.artifacts().get("guide"),"environment":environment_plan(root)}
+    if intent=="guide":
+        doc=workspace._read() or {}
+        selected=doc if run_id is None or run_id==(doc.get("run") or {}).get("id") else next((a for a in doc.get("archive",[]) if a["run"]["id"]==run_id),{})
+        return {"status":"READY","guide":selected.get("artifacts",{}).get("guide"),"environment":environment_plan(root)}
     if intent=="backlog": return workspace.backlog()|{"status":"READY"}
     if intent=="artifacts": return {"status":"READY","artifacts":workspace.artifacts(),"build_sha":workspace.build_id()}
     if intent=="discovery":
@@ -41,6 +44,8 @@ def invoke(root,intent,payload=None,*,request_id=None,expected_revision=None,run
         raise ValueError("mutations require request_id and expected_revision from current status")
     current=workspace.status()
     if run_id is not None and run_id!=current.get("run_id"): raise ValueError("stale run ID")
+    if intent=="execute":
+        return {"status":"ISOLATION_REQUIRED","reason":"Public recipe execution is disabled: process lifetime supervision does not isolate Git, credentials, filesystem or network authority. No user approval can bypass this capability limit."}
     if intent in {"git","execute","qa-review","cleanup"}:
         if current.get("revision")!=expected_revision: raise ValueError("stale workspace revision")
         if intent=="qa-review": return workspace.record_agent_review(payload["subject"],payload["digest"],payload["notes"])
@@ -51,8 +56,7 @@ def invoke(root,intent,payload=None,*,request_id=None,expected_revision=None,run
             raise ValueError("this action is outside the reviewed active scope")
         workspace._command("_claim_action",{"operation_id":request_id,"description":{"intent":intent,"payload":payload}},expected_revision=expected_revision)
         try:
-            if intent=="execute": result=execute_recipe(workspace,payload["recipe_id"])
-            else:
+            if intent=="git":
                 service=LocalGit(root); operation=payload.get("operation")
                 if operation=="bootstrap": result=service.bootstrap()
                 elif operation=="stage": result={"status":"CREATED_LOCAL","branch":service.stage(payload["name"])}

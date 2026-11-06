@@ -25,7 +25,7 @@ Windows executable ยังไม่ได้เซ็นใบรับรอ�
 | Claude Code | CLI ทดลองด้วย `claude --plugin-dir /absolute/path/project-builder`; แจกใช้ถาวรผ่าน local/private marketplace ตามระบบของ Claude | `/project-builder:init`, `/project-builder:start`, `/project-builder:continue`, `/project-builder:status` |
 | Devin CLI/Desktop | ติดตั้ง local folder ด้วยระบบ plugins ของ Devin; ดู `devin plugins --help` ของรุ่นที่ติดตั้ง | `/project-builder:init`, `/project-builder:start`, `/project-builder:continue`, `/project-builder:status` |
 
-Codex รุ่นที่ตรวจในเครื่องนี้มี `codex plugin marketplace add PATH` และ `codex plugin add project-builder@MARKETPLACE` ดูตัวอย่าง marketplace.json ในไฟล์ examples แล้วแก้ source.path ให้ชี้โฟลเดอร์ plugin เทียบกับ marketplace root ก่อนลงทะเบียน ไม่แก้ config ของ host อัตโนมัติ
+Codex รุ่นที่ตรวจในเครื่องนี้มี `codex plugin marketplace add PATH` และ `codex plugin add project-builder@MARKETPLACE` ดูตัวอย่าง marketplace.json ในไฟล์ examples แล้วแก้ source.path ให้ชี้โฟลเดอร์ plugin เทียบกับ marketplace root ก่อนลงทะเบียน สำหรับ output ที่ build แล้ว มี catalog ที่ codex/.agents/plugins/marketplace.json ใช้ codex plugin marketplace add กับโฟลเดอร์ codex ได้ ส่วน ZIP มีตัวอย่างให้จัดโครงสร้างนี้เอง ไม่แก้ config ของ host อัตโนมัติ
 
 ชื่อคำสั่ง namespace เป็นสัญญาของผู้ใช้; syntax ของ Codex ใช้ picker/mention ตาม host ไม่สมมติว่ารองรับทุก slash command เหมือน Claude/Devin หน้า Desktop ใช้ plugin loader ของ host เอง ไม่มีแอป Desktop ใหม่ในแพ็กเกจนี้
 
@@ -70,7 +70,7 @@ runtime รองรับ local Git ตามเส้นทาง feature → 
 
 ปลั๊กอินไม่ใช่ OS sandbox สำหรับเครื่องมืออื่นที่ host มีสิทธิ์อยู่แล้ว อย่าอ้างว่าสามารถห้ามคำสั่งที่รันนอก runtime ได้ทั้งหมด และห้ามให้ coordinator ใช้ shell/connector/agent อื่นเลี่ยงข้อจำกัด
 
-`pause`/`stop` และ `cancel` checkpoint ทันทีและขอ cleanup เฉพาะของ project นี้ `cleanup` ไม่ลบ code, guide, test evidence หรือ environment ที่ใช้ซ้ำได้ อย่าลบ .project-builder ระหว่างมีงานค้าง `operations` แสดงงานที่ผลยัง UNKNOWN; ตรวจ Git/ผลข้างเคียงจริงและ cleanup ก่อนรีวิว `recovery` เพื่อยอมรับว่าการทำงานเดิมยัง NOT_VERIFIED แล้วทดสอบใหม่ วิธีนี้ไม่ประกาศผลสำเร็จที่ไม่มีหลักฐานและไม่ replay mutation เดิมอัตโนมัติ
+`pause`/`stop` และ `cancel` checkpoint ทันทีและขอ cleanup เฉพาะของ project นี้ `cleanup` ไม่ลบ code, guide, test evidence หรือ environment ที่ใช้ซ้ำได้ อย่าลบ .project-builder ระหว่างมีงานค้าง `guide --run-id ID` อ่าน guide ที่ archive จากรอบเก่าได้ `operations` แสดงงานที่ผลยัง UNKNOWN; ตรวจ Git/ผลข้างเคียงจริงและ cleanup ก่อนรีวิว `recovery` เพื่อยอมรับว่าการทำงานเดิมยัง NOT_VERIFIED แล้วทดสอบใหม่ วิธีนี้ไม่ประกาศผลสำเร็จที่ไม่มีหลักฐานและไม่ replay mutation เดิมอัตโนมัติ
 
 ถอนการติดตั้งด้วยระบบ host ปิด session เพื่อหยุด MCP process แล้วลบโฟลเดอร์แพ็กเกจเมื่อไม่ใช้ เก็บ .project-builder ของโปรเจ็กต์ไว้หากต้อง resume และอย่าลบ resource ledger ส่วนกลางขณะมี lease ค้าง
 

@@ -119,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:
             data=invoke(root,intent,payload,request_id=getattr(args,"request_id",None) or str(uuid4()),
                         expected_revision=revision,run_id=getattr(args,"run_id",None))
         status=data.get("status","READY")
-        code=1 if status in {"REJECTED","ACTION_STOPPED","CLEANUP_PENDING","EXECUTION_STOPPED","CONFLICT"} else 0
+        code=1 if status in {"REJECTED","ACTION_STOPPED","CLEANUP_PENDING","EXECUTION_STOPPED","CONFLICT","ISOLATION_REQUIRED"} else 0
         result=CommandResult(status=status,summary=f"{intent}: {status}",next_action=data.get("next_action"),data=data)
     except (ValueError,OSError,KeyError,TypeError,RuntimeError) as error:
         code=1; result=CommandResult(status="REJECTED",summary=str(error),next_action="Inspect status/doctor and correct the input; completed work is preserved.",data={})

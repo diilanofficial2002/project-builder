@@ -169,4 +169,3 @@ def evaluate_quality(matrix, evidence, defects, build_sha):
         return finish("PASS", "Applicable matrix exceeds 95%; no open High/Critical")
     except (KeyError, TypeError, ValueError, UnicodeError, AttributeError):
         return finish("UNVERIFIED", "Malformed quality evidence")
-

@@ -201,6 +201,8 @@ class Workspace:
             if run and run["status"] not in TERMINAL:
                 return self._view(doc)
             if run:
+                doc.setdefault("archive",[]).append({"run":copy.deepcopy(run),"brief":copy.deepcopy(doc.get("brief")),
+                    "artifacts":copy.deepcopy(doc["artifacts"]),"reviews":copy.deepcopy(doc["reviews"])})
                 doc["brief"]=None  # Reassess the next scope; never mechanically repeat a Stage ladder.
             doc["run"]={"id":str(uuid4()),"status":intake_step(doc["kind"]),"stage":None,"stages":[],
                         "description":str(payload.get("description","")),"contract_digest":None,"next_action":"Collect discovery evidence and review the business-to-technical brief."}
@@ -306,4 +308,3 @@ class Workspace:
         else:
             raise ValueError("unknown workspace action")
         return self._view(doc)
-

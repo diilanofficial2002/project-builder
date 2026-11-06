@@ -64,4 +64,3 @@ class Documents:
             except BaseException:
                 connection.rollback()
                 raise
-

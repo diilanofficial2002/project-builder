@@ -15,14 +15,61 @@ class LocalGit:
             raise ValueError("select the repository root; initialize Git and an initial commit first")
 
     def _run(self, *args):
+        # Inspect effective config (including include/global/system) without invoking
+        # checkout/status first. Hooks/fsmonitor flags alone do not disable filters.
+        config=git_read(self.root,["config","--null","--list"])
+        if config is None: raise ValueError("cannot verify effective Git configuration")
+        effective={}
+        for entry in config.split(b"\0"):
+            if entry:
+                key,_,value=entry.partition(b"\n");effective[os.fsdecode(key)]=os.fsdecode(value)
+        extensions={k:v for k,v in effective.items() if v and re.match(r"^(filter\..*\.(clean|smudge|process)|merge\..*\.driver|diff\..*\.textconv)$",k)}
+        external_diff=bool(effective.get("diff.external"))
+        if external_diff or (extensions and self._has_extension_attributes(effective)):
+            raise ValueError("repository has executable Git extensions; local automation requires isolation. Preserve its config and let the owner inspect it.")
         env = {k:v for k,v in os.environ.items() if not k.startswith("GIT_")}
-        result = subprocess.run([shutil.which("git"), "-c", "core.hooksPath="+os.devnull,
+        disabled=[part for key in extensions for part in ("-c",key+"=")]
+        result = subprocess.run([shutil.which("git"),*disabled, "-c", "core.hooksPath="+os.devnull,
             "-c", "core.fsmonitor=false", "-c", "commit.gpgSign=false", "-c", "submodule.recurse=false",
             "-C", str(self.root), *args], env=env, capture_output=True, timeout=30,
             creationflags=subprocess.CREATE_NO_WINDOW if os.name=="nt" else 0)
         if result.returncode:
             raise ValueError("Git operation stopped; inspect repository status: "+result.stderr.decode(errors="replace")[:1500])
         return result.stdout.decode().strip()
+
+    def _has_extension_attributes(self,config):
+        """Inspect raw attributes across local heads, index/worktree and effective global files.
+
+        Unused global Git-LFS registrations are harmless; an attribute that can
+        activate a configured command is not. Raw object reads never smudge data.
+        """
+        def unsafe(raw): return bool(re.search(rb"(?:^|\s)(?:filter|merge|diff)=",raw))
+        refs=git_read(self.root,["for-each-ref","--format=%(refname)","refs/heads/"])
+        if refs is None: raise ValueError("cannot inspect branch attributes")
+        if len(refs.splitlines())>200: raise ValueError("too many branches for bounded Git preflight")
+        for ref in refs.decode().splitlines():
+            names=git_read(self.root,["ls-tree","-r","--name-only","-z",ref])
+            if names is None: raise ValueError("cannot inspect source attributes")
+            for name in names.split(b"\0"):
+                if name and (name==b".gitattributes" or name.endswith(b"/.gitattributes")):
+                    obj=ref+":"+os.fsdecode(name)
+                    size=git_read(self.root,["cat-file","-s",obj])
+                    if size is None or int(size)>2**20: raise ValueError("attributes exceed bounded preflight")
+                    if unsafe(git_read(self.root,["show",obj]) or b""): return True
+        paths=[self.root/".gitattributes",Path.home()/".config"/"git"/"attributes"]
+        for key in ("core.attributesfile",):
+            if config.get(key): paths.append(Path(config[key]).expanduser())
+        info=git_read(self.root,["rev-parse","--git-path","info/attributes"])
+        if info:
+            path=Path(os.fsdecode(info).strip());paths.append(path if path.is_absolute() else self.root/path)
+        tracked=git_read(self.root,["ls-files","-z"])
+        if tracked is None: raise ValueError("cannot inspect working attributes")
+        paths.extend(self.root/os.fsdecode(n) for n in tracked.split(b"\0") if n.endswith(b"/.gitattributes"))
+        for path in paths:
+            if path.exists():
+                if path.is_symlink() or path.stat().st_size>2**20: raise ValueError("unverifiable attributes file")
+                if unsafe(path.read_bytes()): return True
+        return False
 
     def _clean(self):
         raw = self._run("status", "--porcelain", "--untracked-files=normal", "--", ".", ":(exclude).project-builder")

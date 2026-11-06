@@ -8,7 +8,7 @@ from test_workspace import brief
 
 
 @pytest.mark.skipif(sys.platform!="win32",reason="native Windows Job test")
-def test_reviewed_recipe_runs_and_cleans_before_return(tmp_path):
+def test_public_recipe_cannot_create_files_without_isolation(tmp_path):
     w=Workspace(tmp_path,reviewer=lambda p:True);w.init();w.start("Test a recipe")
     document=brief();document["permissions"]=["execute_recipes"]
     document["recipes"]=[{"id":"write","executable":sys.executable,
@@ -17,12 +17,8 @@ def test_reviewed_recipe_runs_and_cleans_before_return(tmp_path):
     w.submit("brief",document);p=w.review_packet("kickoff");w.record_review("kickoff",p["digest"]);w.continue_run()
     state=w.status()
     result=invoke(tmp_path,"execute",{"recipe_id":"write"},request_id="execute1",expected_revision=state["revision"],run_id=state["run_id"])
-    assert result["status"]=="EXECUTED"
-    assert result["cleanup"]["status"]=="CLEANED"
-    assert (tmp_path/"observed.txt").read_text()=="actually ran"
-    assert not Path(result["cleanup"]["paths_removed"][0]).exists()
-    with pytest.raises(ValueError):
-        invoke(tmp_path,"execute",{"recipe_id":"write"},request_id="execute1",expected_revision=w.status()["revision"])
+    assert result["status"]=="ISOLATION_REQUIRED"
+    assert not (tmp_path/"observed.txt").exists()
 
 
 def test_changed_build_and_omitted_requirement_cannot_reuse_quality_review(tmp_path):

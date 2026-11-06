@@ -50,4 +50,3 @@ def build_id(root: Path):
             for block in iter(lambda:stream.read(65536),b""):
                 state.update(block)
     return ("dirty:" if head else "unversioned:")+state.hexdigest()
-

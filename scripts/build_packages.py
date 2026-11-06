@@ -64,7 +64,15 @@ def package(root,runtime,output,*,platform_name):
         shutil.copytree(root/"plugin"/"references",directory/"references")
         shutil.copytree(runtime,directory/"runtime",symlinks=False)
         if (root/"docs"/"installation").exists(): shutil.copytree(root/"docs"/"installation",directory/"docs")
-        if (root/"README.md").exists(): shutil.copyfile(root/"README.md",directory/"README.md")
+        (directory/"README.md").write_text("# Project Builder\n\nAI team workflow for projects managed by Codex, Claude Code or Devin CLI/Desktop.\n\n- [Install and use](docs/README.md)\n- [Artifacts and API](docs/artifacts-and-api.md)\n- [Verification and limitations](docs/verification.md)\n- [Coordinator contract](references/workflow.md)\n\nEditable unapproved input documents are in templates/. A marketplace example is in examples/.\nPublic recipe execution is disabled until an isolated driver can enforce the authority ceiling.\n",encoding="utf-8")
+        import importlib.util
+        spec=importlib.util.spec_from_file_location("project_builder_templates",root/"scripts"/"create_example.py")
+        templates=importlib.util.module_from_spec(spec);spec.loader.exec_module(templates)
+        templates.create(directory/"templates")
+        (directory/"examples").mkdir()
+        shutil.copyfile(root/"examples"/"marketplace.json",directory/"examples"/"marketplace.json")
+        if host=="codex":
+            write_json(directory.parent/".agents"/"plugins"/"marketplace.json",json.loads((root/"examples"/"marketplace.json").read_text(encoding="utf-8")))
         archive=output/f"project-builder-{version}-{host}-{platform_name}.zip"
         with zipfile.ZipFile(archive,"w",compression=zipfile.ZIP_DEFLATED) as zipped:
             for path in sorted(directory.rglob("*")):

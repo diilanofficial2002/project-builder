@@ -25,7 +25,9 @@ async def smoke(executable,project):
             assert state["status"]=="DISCOVERY"
             denied=await call("_record_review",{"approved":True},state["revision"])
             assert denied["status"]=="REJECTED"
-            print(json.dumps({"status":"PASS","transport":"stdio","tools":[t.name for t in tools.tools],"observed_state":state["status"],"model_approval":"REJECTED"}))
+            refused=await call("execute",{"recipe_id":"unisolated"},state["revision"])
+            assert refused["status"]=="ISOLATION_REQUIRED"
+            print(json.dumps({"status":"PASS","transport":"stdio","tools":[t.name for t in tools.tools],"observed_state":state["status"],"model_approval":"REJECTED","public_execution":"ISOLATION_REQUIRED"}))
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser();parser.add_argument("executable",type=Path);args=parser.parse_args()

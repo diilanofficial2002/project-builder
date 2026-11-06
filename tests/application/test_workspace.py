@@ -116,4 +116,3 @@ def test_metadata_symlink_cannot_redirect_workspace_writes(workspace,tmp_path):
     with pytest.raises(ValueError):
         workspace.init("new")
     assert not list(outside.iterdir())
-

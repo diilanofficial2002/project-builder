@@ -85,4 +85,3 @@ def test_kickoff_interview_spans_business_and_technical(rules):
     for field in ["business_goal","users","scope","acceptance","architecture","runtime","authority","resource_budget"]:
         assert field in {q["field"] for q in gaps}
     assert rules.discovery_questions({"business_goal":"save time"})[0]["field"] != "business_goal"
-

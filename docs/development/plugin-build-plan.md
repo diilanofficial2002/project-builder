@@ -1,7 +1,7 @@
 # project-builder — แผนสร้างตัวปลั๊กอิน
 
 วันที่: 7 พฤศจิกายน 2026 (Asia/Bangkok)
-สถานะ: เจ้าของยืนยันขอบเขตแล้ว เริ่ม Native execution วันที่ 7 พฤศจิกายน 2026
+สถานะ: สร้าง local release 0.1.0 แล้ว มีข้อจำกัดที่บันทึกไว้ด้านล่าง; ยังไม่รับรอง full autonomous execution หรือ native ทุก host/OS
 Product requirements: [Product Spec](../product/project-builder-product-spec.md)
 
 ## 1. เป้าหมายและวิธีทำ
@@ -74,3 +74,9 @@ Product requirements: [Product Spec](../product/project-builder-product-spec.md)
 
 Interfaces ที่ใช้ร่วม: Workspace.status/init/start/submit/continue_run/change/pause/cancel; review_packet/record_review ผ่าน injected user channel; rules.evaluate_quality/select_stages/plan_team; Supervisor/ResourceLedger ที่มีอยู่แล้ว
 การตรวจพบว่า MCP elicitation อาจถูก client ที่เป็น agent ตอบเองได้ ต้องไม่ถือว่าการมี elicitation capability เท่ากับพิสูจน์ว่าเป็นคนตอบ; ใช้ trusted host integration ที่ยืนยันได้หรือ fallback การ review ผ่าน local interactive CLI และเปิดเผยข้อจำกัด
+
+## Local release และงานที่ยังไม่รับรอง
+
+Windows host ZIP ทั้งสามพร้อม runtime สร้างและตรวจ schema/checksum แล้ว; ชุดทดสอบ 272 ผ่าน 2 ข้าม และ executable เชื่อมต่อ MCP จริงผ่าน ดู docs/installation/verification.md และ docs/development/review-and-decisions.md
+
+Public arbitrary-process execution ยังปิดแบบ ISOLATION_REQUIRED จนกว่าจะมี driver ที่แยก Git/credential/filesystem/network ได้จริง ตัว Supervisor ที่ทดสอบเป็น library จัดการ lifetime ไม่ใช่ sandbox Remote writes ยัง LOCAL_ONLY และ native macOS/host activation ยัง NOT_RUN ไม่ประกาศว่าข้อกำหนดทั้งหมดผ่านแล้ว การทดสอบบนแพลตฟอร์มเหล่านั้นไม่ใช่ Stage หรือการหาผู้ทดลองสำหรับการสร้างปลั๊กอิน

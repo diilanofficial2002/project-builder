@@ -26,7 +26,7 @@ def ledger(tmp_path):
 @pytest.fixture
 def supervisor(ledger, sample):
     from project_builder.supervision.supervisor import Supervisor
-    with Supervisor(ledger, sampler=lambda: sample, interval=0.05) as supervisor:
+    with Supervisor(ledger, sampler=lambda: sample, interval=0.05,trusted_group_recipes=frozenset({"native-fixture"})) as supervisor:
         yield supervisor
 
 
@@ -37,4 +37,4 @@ def spec(tmp_path):
     return ProcessSpec(executable=Path(sys.executable), argv=[str(fixture), "sleep", str(tmp_path / "result.json")],
                        cwd=tmp_path, env={}, budget=ResourceRequest(project_id="p1", memory_bytes=32 * 2**20),
                        containment="cooperative_group" if sys.platform == "darwin" else "contained_tree",
-                       timeout_seconds=8.0)
+                       trusted_recipe_id="native-fixture",timeout_seconds=8.0)

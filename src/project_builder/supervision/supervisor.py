@@ -64,6 +64,8 @@ class Supervisor:
     def start(self, spec: ProcessSpec, owner: RunIdentity) -> ResourceHandle:
         spec = ProcessSpec.model_validate(spec.model_dump())
         owner = RunIdentity.model_validate(owner.model_dump())
+        if not spec.executable.is_file():
+            raise FileNotFoundError(str(spec.executable))
         if spec.budget.project_id != owner.project_id:
             raise ValueError("budget project does not match owner")
         if sys.platform == "darwin":
@@ -82,6 +84,7 @@ class Supervisor:
             scratch = self.scratch_root / handle_id
             backend = None
             try:
+                self.ledger.prepare(lease,{"id":handle_id,"token":token,"scratch":str(scratch),"platform":sys.platform})
                 reject_links(self.scratch_root)
                 scratch.mkdir(mode=0o700)
                 (scratch / ".owner").write_text(token, encoding="utf-8")
@@ -107,8 +110,10 @@ class Supervisor:
                     if backend is not None:
                         backend.close()
                     self.ledger.release(lease)
+                    self.ledger.finish_intent(lease,"cleanup_pending")
                     if scratch.exists():
                         remove_scratch(self.scratch_root, scratch, token)
+                    self.ledger.finish_intent(lease,"cleaned")
                 raise
 
     def stop(self, handle: ResourceHandle, grace_seconds: float = 5.0) -> CleanupReceipt:
@@ -183,8 +188,34 @@ class Supervisor:
     def receipt(self, handle_id: str) -> CleanupReceipt | None:
         return self.ledger.receipt(handle_id)
 
-    def reconcile(self) -> list[CleanupReceipt]:
-        return [self.stop(handle, 0) for handle, _, _ in self.ledger.records()]
+    def reconcile(self,project_id=None) -> list[CleanupReceipt]:
+        receipts=[self.stop(handle,0) for handle,_,_ in self.ledger.records() if project_id is None or handle.owner.project_id==project_id]
+        for reservation in self.ledger.orphan_reservations():
+            if project_id is not None and reservation["project"]!=project_id: continue
+            body=reservation["body"]; lease=reservation["id"]; resource_id=body.get("id",lease)
+            stopped=reservation["phase"]=="cleanup_pending"
+            try:
+                if not stopped and (reservation["launcher_pid"] is None or identity_state(reservation["launcher_pid"],reservation["launcher_started"]) not in {"gone","reused"}):
+                    raise RuntimeError("reservation launcher is live or unverified; capacity retained")
+                if not stopped and reservation["phase"]!="reserved":
+                    if body.get("platform")=="win32" and sys.platform=="win32":
+                        from .windows_job import reconcile_job
+                        reconcile_job(resource_id)
+                    elif body.get("platform")=="darwin" and sys.platform=="darwin":
+                        from .macos_group import verify_completion
+                        verify_completion(Path(body["scratch"]),body["token"])
+                    else: raise RuntimeError("startup containment proof unavailable")
+                self.ledger.release(lease)  # exited workload capacity, independent of scratch obligation
+                stopped=True
+                if body.get("scratch"):
+                    remove_scratch(self.scratch_root,Path(body["scratch"]),body["token"])
+                self.ledger.finish_intent(lease,"cleaned")
+                receipt=CleanupReceipt(handle_id=resource_id,status="CLEANED",reason="dead launcher and phase-specific containment reconciled",workload_stopped=True)
+            except (OSError,RuntimeError,ValueError,KeyError) as error:
+                if stopped: self.ledger.finish_intent(lease,"cleanup_pending")
+                receipt=CleanupReceipt(handle_id=resource_id,status="CLEANUP_PENDING",reason=str(error))
+            receipts.append(receipt)
+        return receipts
 
     def _monitor(self):
         while not self._halt.wait(self.interval):

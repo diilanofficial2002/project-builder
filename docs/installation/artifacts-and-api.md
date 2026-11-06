@@ -15,13 +15,13 @@ MCP exposes one `project_builder` tool. Arguments: absolute `project_root`, `int
 | review-packet | subject: kickoff / matrix / quality / guide / baseline / feedback / handoff / recovery |
 | qa-review | subject: matrix / quality / guide, digest, notes with actual independent findings/provenance |
 | git | operation: bootstrap / stage / feature / integrate / delete-feature, plus name/stage/source/target as appropriate |
-| execute | recipe_id referring to the reviewed kickoff |
+| execute | Always ISOLATION_REQUIRED in this release; no public process execution |
 
 Submit via `project-builder submit brief path/to/brief.json --project PATH --json`. CLI files are limited to 1MiB. Artifacts belong in `.project-builder` or another excluded evidence directory so writing their reports does not change the application source fingerprint. Never edit the SQLite database or manufacture review receipts. Keep project metadata out of Git commits; init does not silently change an existing .gitignore.
 
 ## Brief
 
-Use `scripts/create_example.py OUTPUT_DIRECTORY` to create editable templates. TODO answers deliberately leave discovery incomplete; replace them with reviewed facts, explicit N/A reasons and assumptions. The 14 answer keys are:
+Standalone packages include editable JSON in `templates/`; copy these into project-owned metadata and edit them. Source developers can also use `scripts/create_example.py OUTPUT_DIRECTORY`. TODO answers deliberately leave discovery incomplete; replace them with reviewed facts, explicit N/A reasons and assumptions. The 14 answer keys are:
 
 business_goal, users, scope, acceptance, business_rules, ux, data, architecture, runtime, quality, authority, resource_budget, human_feedback, delivery.
 
@@ -38,7 +38,7 @@ business_goal, users, scope, acceptance, business_rules, ux, data, architecture,
 
 complexity: mini/small/medium/large. Domains may include frontend/ui/backend/data/ai. Risks select applicable specialists (security/privacy/deployment/operations). The selected team defaults to one active specialist. The plan's stage list is a proposal; only its first bounded Stage is frozen by this kickoff, and the next scope is reassessed after handoff.
 
-Optional recipe: `{ "id":"tests", "executable":"/absolute/path/to/project/.venv/bin/python", "argv":["-m","pytest","-q"], "env":{}, "memory_mb":128, "disk_mb":32, "timeout_seconds":120.0, "cooperative":true }`. Use the Windows .exe path there on Windows. The entire recipe is bound to kickoff, not freely supplied to execute. macOS cooperative must be explicitly reviewed; it is not a sandbox for detaching workloads. Do not store secret values in recipe env.
+Optional recipe: `{ "id":"tests", "executable":"/absolute/path/to/project/.venv/bin/python", "argv":["-m","pytest","-q"], "env":{}, "memory_mb":128, "disk_mb":32, "timeout_seconds":120.0, "cooperative":true }`. Use the Windows .exe path there on Windows. The recipe shape is retained for planning only. Public execute is disabled even after kickoff because lifetime supervision does not isolate filesystem, Git, credentials or network authority. No user approval enables it. macOS cooperative must be explicitly reviewed; it is not a sandbox for detaching workloads. Do not store secret values in recipe env.
 
 ## Matrix and results
 
@@ -62,4 +62,4 @@ Baseline/feedback: build_sha, participants array of exactly 2–3 unique anonymo
 
 Discovery → kickoff review → scoped work → verification → Stage feedback → handoff → completed. Takeovers begin with baseline feedback. Paused/cancelled work preserves checkpoint and code. Requirement revisions after scope freeze queue as backlog; normal changes wait until the whole Stage ends. Every scope is reassessed, including direct-to-Final choices.
 
-The state directory is project-owned. Source fingerprints exclude metadata, environments, build output and dependency directories. Git HEAD plus staged/unstaged/untracked application content binds quality; excessive dirty content or unverifiable symlink/deletion stops fingerprinting and asks you to commit/narrow scope. Long-running recipes use a machine-wide lease ledger; stale leases need proof-based cleanup rather than expiry. UNKNOWN external operations require recovery review and never become an automatic success.
+The state directory is project-owned. Source fingerprints exclude metadata, environments, build output and dependency directories. Git HEAD plus staged/unstaged/untracked application content binds quality; excessive dirty content or unverifiable symlink/deletion stops fingerprinting and asks you to commit/narrow scope. The internal supervisor library (not exposed as an executable recipe tool) uses a machine-wide lease ledger; stale leases need proof-based cleanup rather than expiry. UNKNOWN external operations require recovery review and never become an automatic success.

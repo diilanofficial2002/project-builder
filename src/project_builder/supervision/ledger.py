@@ -5,6 +5,8 @@ from pathlib import Path
 import sqlite3
 import time
 import uuid
+import json
+import psutil
 
 from project_builder.platform_paths import PlatformPaths, reject_links, verify_owner
 from .models import AdmissionDecision, CleanupReceipt, MachineSample, ResourceHandle, ResourceRequest
@@ -33,6 +35,9 @@ class ResourceLedger:
                     receipt TEXT, launcher_pid INTEGER NOT NULL, launcher_started REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS policy (id INTEGER PRIMARY KEY CHECK(id=1), pressure INTEGER NOT NULL);
                 INSERT OR IGNORE INTO policy VALUES(1, 0);
+                CREATE TABLE IF NOT EXISTS launch_intents (
+                    lease TEXT PRIMARY KEY,launcher_pid INTEGER NOT NULL,launcher_started REAL NOT NULL,
+                    phase TEXT NOT NULL,body TEXT NOT NULL);
             """)
 
     @contextmanager
@@ -92,6 +97,20 @@ class ResourceLedger:
             rows = db.execute("SELECT h.* FROM handles h JOIN leases l ON h.lease=l.id WHERE l.active=1 OR h.receipt IS NULL OR h.receipt LIKE '%CLEANUP_PENDING%'").fetchall()
             return [(ResourceHandle.model_validate_json(row["body"]), row["launcher_pid"], row["launcher_started"]) for row in rows]
 
+    def prepare(self,lease_id,body):
+        with self.transaction() as db:
+            changed=db.execute("UPDATE launch_intents SET phase='preparing',body=? WHERE lease=? AND phase='reserved'",
+                (json.dumps(body),lease_id)).rowcount
+            if changed!=1: raise ValueError("reservation is not eligible to launch")
+
+    def orphan_reservations(self):
+        with self.transaction() as db:
+            rows=db.execute("SELECT l.id,l.project,i.launcher_pid,i.launcher_started,i.phase,i.body FROM leases l LEFT JOIN launch_intents i ON i.lease=l.id LEFT JOIN handles h ON h.lease=l.id WHERE h.id IS NULL AND (l.active=1 OR i.phase='cleanup_pending')").fetchall()
+            return [dict(row)|{"body":json.loads(row["body"]) if row["body"] else {}} for row in rows]
+
+    def finish_intent(self,lease_id,phase):
+        with self.transaction() as db: db.execute("UPDATE launch_intents SET phase=? WHERE lease=?",(phase,lease_id))
+
     def save_receipt(self, receipt: CleanupReceipt) -> None:
         with self.transaction() as db:
             db.execute("UPDATE handles SET receipt=? WHERE id=?", (receipt.model_dump_json(), receipt.handle_id))
@@ -129,4 +148,5 @@ def admit(spec: ResourceRequest, sample: MachineSample, ledger: ResourceLedger) 
         lease = uuid.uuid4().hex
         db.execute("INSERT INTO leases VALUES(?,?,?,?,?,?,?,1)", (lease, spec.project_id, spec.memory_bytes,
                    spec.disk_bytes, int(spec.heavy), int(spec.specialist), time.time()))
+        db.execute("INSERT INTO launch_intents VALUES(?,?,?,'reserved','{}')",(lease,os.getpid(),psutil.Process().create_time()))
         return AdmissionDecision(allowed=True, code=code, lease_id=lease)
