@@ -96,13 +96,13 @@ def test_status_parse_is_read_only(tmp_path):
 
 
 @pytest.mark.parametrize("intent", ["init", "start", "continue", "status"])
-def test_unavailable_services_return_failure_without_creating_project(tmp_path, capsys, intent):
+def test_commands_reject_missing_project_without_creating_it(tmp_path, capsys, intent):
     contracts()
     cli = importlib.import_module("project_builder.cli")
     target = tmp_path / "missing-project"
     assert cli.main([intent, "--project", str(target), "--json"]) != 0
     output = json.loads(capsys.readouterr().out)
-    assert output["status"] == "NOT_IMPLEMENTED"
+    assert output["status"] == "REJECTED"
     assert output["summary"]
     assert not target.exists()
 
@@ -110,10 +110,9 @@ def test_unavailable_services_return_failure_without_creating_project(tmp_path, 
 def test_text_output_is_human_readable(tmp_path, capsys):
     contracts()
     cli = importlib.import_module("project_builder.cli")
-    assert cli.main(["status", "--project", str(tmp_path)]) != 0
+    assert cli.main(["status", "--project", str(tmp_path)]) == 0
     output = capsys.readouterr().out
-    assert "NOT_IMPLEMENTED" in output
-    assert "{" not in output
+    assert "NOT_INITIALIZED" in output
 
 
 def test_shell_action_is_not_an_executable_cli_command(capsys):

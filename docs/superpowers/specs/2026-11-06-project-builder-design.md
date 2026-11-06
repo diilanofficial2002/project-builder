@@ -1,8 +1,11 @@
 # project-builder — เอกสารออกแบบ v0.4
 
+> **SUPERSEDED — เอกสารประวัติ ห้ามใช้เป็นแผน execution ปัจจุบัน** ผู้สร้างนำ workflow ภายในปลั๊กอินไปปะปนกับงานสร้างตัวปลั๊กอิน ให้ใช้ [Product Spec](../../product/project-builder-product-spec.md) และ [Build Plan](../../development/plugin-build-plan.md) ที่แยกขอบเขตใหม่แทน
+
+
 วันที่: 6 พฤศจิกายน 2026 (Asia/Bangkok)  
 ปรับปรุงล่าสุด: 7 พฤศจิกายน 2026 (Asia/Bangkok)  
-สถานะ: Approved design v0.4 — เจ้าของตอบ “โอเค” ยืนยันแบบวันที่ 7 พฤศจิกายน 2026; ยืนยันแผนสร้างแล้ว เริ่ม execution แบบ Subagent-driven  
+สถานะ: SUPERSEDED — หยุดใช้กรอบ Stage/branch/acceptance ของเอกสารนี้กับการสร้างปลั๊กอิน; เก็บเป็นประวัติ
 ขอบเขตเอกสาร: Product/workflow/architecture design ไม่ใช่ตัวปลั๊กอินที่ติดตั้งใช้งานได้  
 สถาปัตยกรรมที่ผู้ใช้เลือก: แกนกลางเดียว พร้อมตัวเชื่อมต่อ Codex, Claude Code และ Devin
 

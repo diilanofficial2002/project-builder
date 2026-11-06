@@ -1,0 +1,5 @@
+{
+  "name": "project-builder-local",
+  "interface": {"displayName": "Project Builder Local"},
+  "plugins": [{"name": "project-builder", "source": {"source": "local", "path": "./project-builder"}, "interface": {"displayName": "Project Builder"}}]
+}

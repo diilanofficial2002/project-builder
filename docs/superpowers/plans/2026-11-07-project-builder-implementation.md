@@ -1,5 +1,8 @@
 # project-builder Implementation Plan
 
+> **SUPERSEDED — เอกสารประวัติ ห้ามใช้เป็นแผน execution ปัจจุบัน** ผู้สร้างนำ workflow ภายในปลั๊กอินไปปะปนกับงานสร้างตัวปลั๊กอิน ให้ใช้ [Product Spec](../../product/project-builder-product-spec.md) และ [Build Plan](../../development/plugin-build-plan.md) ที่แยกขอบเขตใหม่แทน
+
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** สร้าง project-builder ให้ทำงานเป็นทีม AI ตาม scope ส่งมอบเป็น Stage และรักษาเพดานอำนาจ/ทรัพยากรบน Windows/macOS ผ่าน Codex, Claude Code และ Devin CLI/Desktop
@@ -11,7 +14,7 @@
 **Spec:** [แบบที่ผู้ใช้ยืนยัน v0.4](../specs/2026-11-06-project-builder-design.md)
 
 วันที่: 7 พฤศจิกายน 2026 (Asia/Bangkok)  
-สถานะ: ผู้ใช้ยืนยันแผนและเลือก Subagent-driven วันที่ 7 พฤศจิกายน 2026; เริ่ม execution ที่ PoC โดยบันทึกผลจริงแยกจากเป้าหมายรับรอง  
+สถานะ: SUPERSEDED — หยุดใช้กรอบ Stage/branch/acceptance ของเอกสารนี้กับการสร้างปลั๊กอิน; เก็บเป็นประวัติ
 ผู้ใช้ตอบ “โอเค” หลังสรุปแบบ v0.4; บันทึกเป็นการยืนยันแบบ ไม่ใช่การยืนยันว่า capability tests ผ่านแล้ว
 
 ## Global Constraints
