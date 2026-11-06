@@ -295,7 +295,7 @@ Commit: git commit -m "feat: persist run state and idempotent operation receipts
 - Produces: inspect_enforcement(repo: RepositoryRef, identity: RemoteIdentity) -> EnforcementReport
 - Produces: EnforcementReport(mode, repo, actor_id, refs_digest, rules_digest, workflows_digest, checked_at, expires_at, reasons); GateEvidence เป็น IDs/digests จาก StateStore ไม่ใช่ caller-supplied passed flag
 
-- [ ] **Step 1: เขียน failing tests ใน tests/policy/test_authority.py, tests/policy/test_preflight.py** — ประกาศ fixtures ของ task ใน test/conftest เดียวกัน พร้อม assertions ต่อไปนี้และกรณีเพิ่มเติมที่ระบุ
+- [x] **Step 1: เขียน failing tests ใน tests/policy/test_authority.py, tests/policy/test_preflight.py** — ประกาศ fixtures ของ task ใน test/conftest เดียวกัน พร้อม assertions ต่อไปนี้และกรณีเพิ่มเติมที่ระบุ
 
 ~~~python
 @pytest.mark.parametrize("kind", ["merge_staging", "push_main", "open_pr_main",
@@ -310,12 +310,12 @@ def test_preflight_only_uses_read_apis(recording_transport, repo, identity):
     assert all(r.method == "GET" for r in recording_transport.requests)
 ~~~
 
-- [ ] **Step 2: รัน RED**
+- [x] **Step 2: รัน RED**
 
 Run: uv run --frozen --python 3.14.4 pytest tests/policy -q  
 Expected: FAIL เพราะ interface/behavior ที่ task นี้รับผิดชอบยังไม่มี; ไม่ถือ import/dependency failure ที่ไม่เกี่ยวข้องเป็นหลักฐาน RED
 
-- [ ] **Step 3: Implement interfaces ในไฟล์เจ้าของ task**
+- [x] **Step 3: Implement interfaces ในไฟล์เจ้าของ task**
 
 กำหนด deny operations เป็น code constants ไม่มี config override; ตรวจ actor/bypass/ref protections/triggered workflows ด้วย read APIs; binding proof กับ repo/actor/config digest และอายุสูงสุด 300 วินาที ต้อง refresh ก่อน remote mutation เมื่อ refs/config เปลี่ยน
 
@@ -323,12 +323,12 @@ Expected: FAIL เพราะ interface/behavior ที่ task นี้รั
 - negative tests ใช้ fake HTTP server/transport เท่านั้น ห้ามลอง push/merge/delete main/staging จริงเพื่อดูว่าจะถูกปฏิเสธหรือไม่
 - proof ที่ไม่ครบให้ LOCAL_ONLY; ไม่ให้ user prompt หรือ add-on เปลี่ยน mode เป็น VERIFIED; จำกัด provider แรกเป็น github.com และปฏิเสธ remote URL ที่ไม่อยู่ใน onboarding scope
 
-- [ ] **Step 4: รัน GREEN และตรวจผลส่งมอบ**
+- [x] **Step 4: รัน GREEN และตรวจผลส่งมอบ**
 
 Run: uv run --frozen --python 3.14.4 pytest tests/policy -q  
 Expected: PASS ทุก test ที่เลือกบน environment ที่ระบุ พร้อมตรวจ receipts/artifacts ตาม task; native/human checks ที่ยังไม่ทำต้องแสดง WAITING/UNVERIFIED ห้ามแทนด้วย unit-test PASS
 
-- [ ] **Step 5: Commit บน feature branch ของ task เท่านั้น**
+- [x] **Step 5: Commit บน feature branch ของ task เท่านั้น**
 
 ตรวจ diff เฉพาะไฟล์ task และ evidence ที่แชร์ได้ แล้วใช้ git add กับรายการไฟล์ที่ระบุชัด (ไม่ git add . ที่อาจเก็บข้อมูลผู้ทดลอง/secrets)  
 Commit: git commit -m "feat: enforce immutable authority ceiling and remote preflight"  
