@@ -1,0 +1,26 @@
+[build-system]
+requires = ["uv_build==0.11.20"]
+build-backend = "uv_build"
+
+[project]
+name = "project-builder"
+version = "0.1.0"
+description = "Stage-based project delivery with explicit authority and evidence"
+requires-python = "==3.14.4"
+dependencies = [
+    "mcp==2.3.0",
+    "pydantic==2.14.3",
+    "psutil==7.2.2",
+    "httpx==0.28.1",
+    "PyYAML==6.0.3",
+]
+
+[dependency-groups]
+dev = ["pytest==9.2.0", "PyInstaller==6.22.3"]
+
+[project.scripts]
+project-builder = "project_builder.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
