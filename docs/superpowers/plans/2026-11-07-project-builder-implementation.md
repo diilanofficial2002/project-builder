@@ -54,6 +54,18 @@
 
 ---
 
+## Execution clarification — คำชี้แจงจากผู้ใช้วันที่ 7 พฤศจิกายน 2026
+
+ผู้ใช้แก้ความเข้าใจของผู้สร้าง: เงื่อนไขทดลองโดยผู้ใช้จริง 2–3 คนและ workflow Stage เป็นงานที่ **ตัว project-builder ต้องทำให้โปรเจ็กต์ที่รับผิดชอบ** ไม่ใช่การขอให้เจ้าของจัดหาผู้ทดลอง/เครื่อง Mac ก่อนสร้างปลั๊กอินนี้ให้เสร็จ
+
+คำชี้แจงนี้มีลำดับสูงกว่าข้อความ acceptance ของการสร้างปลั๊กอินในแผนฉบับก่อน:
+- ดำเนินการสร้างทั้ง 19 งานต่อเนื่องตาม dependency; PoC/MVP/Final ในแผนนี้เป็นจุดรวมและทดสอบ implementation ไม่เพิ่ม human gate ที่เจ้าของไม่ได้ร้องขอสำหรับงานสร้างตัวปลั๊กอิน
+- Human/baseline/stage feedback, >95%, High+=0, guides, resource lifecycle และ authority ceiling ยังคงเป็นพฤติกรรมผลิตภัณฑ์ที่ต้อง implement และทดสอบครบ; ใช้ fixtures ทดสอบพฤติกรรม แต่ห้ามปลอมว่า fixture คือผู้ทดลองจริงในโปรเจ็กต์ที่ปลั๊กอินรับทำ
+- งาน T6/T17/T19 ต้องส่งซอฟต์แวร์ ชุดทดสอบ คู่มือติดตั้ง/ใช้งาน และ capability report ตามหลักฐานที่มีจริง ไม่หยุดสร้างเพราะยังไม่ได้จัด native host matrix หรือ real-human trial ของตัวปลั๊กอินเอง
+- ทดสอบ Windows ที่มีจริง; สร้าง native macOS test/build automation และคำแนะนำให้ทำซ้ำได้; ผลที่ยังไม่รันรายงาน NOT_RUN/UNVERIFIED ไม่อ้างว่าผ่าน แต่ไม่ถือว่าโค้ดสร้างต่อไม่ได้
+- Gate evaluators ของผลิตภัณฑ์ยังต้องปฏิเสธ evidence ที่ไม่ครบในโครงการลูกค้าตาม contract ที่เลือกจริง; ความครบของ implementation ไม่ใช่การประกาศว่าทั้ง 12 native installations ได้รับการรับรองแล้ว
+- Beta เพิ่มเฉพาะหากพบ gap ที่ต้องแก้; ถ้าไม่จำเป็นให้บันทึก skipped ไม่สร้างกิจกรรมเปล่า
+
 ## 1. Scope, Stage path และสิ่งที่ต้องมีก่อน execution
 
 ส่วนประกอบพึ่ง interface/state/policy ชุดเดียวกัน จึงใช้แผนหลักหนึ่งฉบับ แบ่งเป็น deliverables ที่ตรวจรับแยกกัน ไม่เปิดโครงการอิสระหลายชุดที่กฎอาจต่างกัน
@@ -179,10 +191,10 @@ T3/T4 พัฒนาแยกกันได้เมื่อใช้ interfa
 - Produces: parse_command(argv: list[str]) -> CommandEnvelope; main(argv: list[str] | None = None) -> int
 - Consumes: ไม่มี production interface ก่อนหน้า; รับ OS/path/version เป็นข้อมูล ไม่เริ่ม subprocess จาก import
 
-- [ ] **Setup 1:** สร้าง metadata พร้อม exact direct pins ใน Tech Stack และ console entry point project-builder = project_builder.cli:main; .python-version เป็น 3.14.4 และ .venv อยู่ในรายการ ignore โดยรักษา entries เดิม
-- [ ] **Setup 2:** กำหนด pytest pythonpath=['src'] ใน pyproject.toml แล้วรัน uv lock --python 3.14.4 และ uv sync --frozen --no-install-project --python 3.14.4 ใน environment ที่ kickoff อนุญาต ก่อนทำ RED; RED ใช้ --no-sync เพื่อไม่ trigger editable build ก่อนมี package; หลังเพิ่ม src ใช้ uv sync --frozen เพื่อ install เฉพาะโปรเจ็กต์นี้
+- [x] **Setup 1:** สร้าง metadata พร้อม exact direct pins ใน Tech Stack และ console entry point project-builder = project_builder.cli:main; .python-version เป็น 3.14.4 และ .venv อยู่ในรายการ ignore โดยรักษา entries เดิม
+- [x] **Setup 2:** กำหนด pytest pythonpath=['src'] ใน pyproject.toml แล้วรัน uv lock --python 3.14.4 และ uv sync --frozen --no-install-project --python 3.14.4 ใน environment ที่ kickoff อนุญาต ก่อนทำ RED; RED ใช้ --no-sync เพื่อไม่ trigger editable build ก่อนมี package; หลังเพิ่ม src ใช้ uv sync --frozen เพื่อ install เฉพาะโปรเจ็กต์นี้
 
-- [ ] **Step 1: เขียน failing tests ใน tests/test_contracts.py, tests/conftest.py** — ประกาศ fixtures ของ task ใน test/conftest เดียวกัน พร้อม assertions ต่อไปนี้และกรณีเพิ่มเติมที่ระบุ
+- [x] **Step 1: เขียน failing tests ใน tests/test_contracts.py, tests/conftest.py** — ประกาศ fixtures ของ task ใน test/conftest เดียวกัน พร้อม assertions ต่อไปนี้และกรณีเพิ่มเติมที่ระบุ
 
 ~~~python
 def test_rejects_model_claimed_approval(raw_contract):
@@ -195,23 +207,23 @@ def test_status_parse_is_read_only():
     assert parse_command(["status", "--project", "fixture"]).intent == "status"
 ~~~
 
-- [ ] **Step 2: รัน RED**
+- [x] **Step 2: รัน RED**
 
 Run: uv run --frozen --no-sync --python 3.14.4 pytest tests/test_contracts.py -q  
 Expected: FAIL เพราะ interface/behavior ที่ task นี้รับผิดชอบยังไม่มี; ไม่ถือ import/dependency failure ที่ไม่เกี่ยวข้องเป็นหลักฐาน RED
 
-- [ ] **Step 3: Implement interfaces ในไฟล์เจ้าของ task**
+- [x] **Step 3: Implement interfaces ในไฟล์เจ้าของ task**
 
 ใช้ Pydantic strict models, extra='forbid', discriminated command payloads และ argparse แยก text output กับ --json; ไม่รับ Boolean จาก model เป็นหลักฐานอนุมัติ
 
 
 
-- [ ] **Step 4: รัน GREEN และตรวจผลส่งมอบ**
+- [x] **Step 4: รัน GREEN และตรวจผลส่งมอบ**
 
 Run: uv run --frozen --python 3.14.4 pytest tests/test_contracts.py -q  
 Expected: PASS ทุก test ที่เลือกบน environment ที่ระบุ พร้อมตรวจ receipts/artifacts ตาม task; native/human checks ที่ยังไม่ทำต้องแสดง WAITING/UNVERIFIED ห้ามแทนด้วย unit-test PASS
 
-- [ ] **Step 5: Commit บน feature branch ของ task เท่านั้น**
+- [x] **Step 5: Commit บน feature branch ของ task เท่านั้น**
 
 ตรวจ diff เฉพาะไฟล์ task และ evidence ที่แชร์ได้ แล้วใช้ git add กับรายการไฟล์ที่ระบุชัด (ไม่ git add . ที่อาจเก็บข้อมูลผู้ทดลอง/secrets)  
 Commit: git commit -m "feat: define strict project contracts and command entry point"  
