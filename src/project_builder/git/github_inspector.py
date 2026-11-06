@@ -48,6 +48,9 @@ class _Reader:
                     raise _InspectionFailure("REQUEST_BUDGET")
             import json
             data = json.loads(content)
+            # Validate the same finite-number/UTF-8 canonical encoding used by
+            # reports before any response data can be retained as observations.
+            digest_data(data)
             return data, response.headers.get("link")
 
     def listing(self, path: str) -> list:

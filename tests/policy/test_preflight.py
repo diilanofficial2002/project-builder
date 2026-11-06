@@ -119,3 +119,14 @@ def test_transport_exception_is_sanitized(api, repo, identity):
     report = inspector.inspect_enforcement(repo, identity)
     assert "READ_UNAVAILABLE" in report.reasons
     assert "secret-token" not in str(report) and "secret-token" not in repr(inspector)
+
+
+@pytest.mark.parametrize("raw_value", [b"1e400", b"-1e400", b"NaN", b"Infinity", b"-Infinity", b'"\\ud800"'])
+def test_uncanonical_json_observations_return_malformed_report(api, repo, identity, http_case, raw_value):
+    # json= would reject these values in the fake itself; exercise actual response decoding.
+    body = b'{"id":42,"full_name":"owner/sample","permissions":{"push":' + raw_value + b'}}'
+    http_case.responses["/repos/owner/sample"] = httpx.Response(200, content=body)
+    report = inspect(api, repo, identity, http_case)
+    assert report.mode == "LOCAL_ONLY"
+    assert "MALFORMED_RESPONSE" in report.reasons
+    assert len(http_case.requests) == 1
